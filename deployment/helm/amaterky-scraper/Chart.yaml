@@ -1,6 +1,0 @@
-apiVersion: v2
-name: amaterky-scraper
-description: Periodically scrape listings and serve the latest JSON with Nginx
-type: application
-version: 0.1.0
-appVersion: "1.0.0"

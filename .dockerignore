@@ -1,7 +1,0 @@
-.devenv
-.idea
-.venv
-__pycache__
-*.pyc
-.git
-data
