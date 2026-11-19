@@ -1,22 +1,5 @@
-remote_theme: cotes2020/jekyll-theme-chirpy@v7.1.1
 lang: en
 title: Amaterky Scraper Helm Repository
-tagline: Kubernetes deployment and Helm chart
 description: Install and configure the Amaterky Scraper Helm chart.
 url: "https://karafra.github.io"
 baseurl: "/amaterky-scraper"
-github:
-  username: karafra
-social:
-  name: karafra
-  links:
-    - https://github.com/karafra
-theme_mode: dark
-toc: true
-pwa:
-  enabled: false
-sass:
-  style: compressed
-avatar: https://github.com/karafra.png
-plugins:
-  - jekyll-remote-theme
