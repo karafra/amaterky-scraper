@@ -1,5 +1,5 @@
-FROM ghcr.io/astral-sh/uv:0.13.7 AS uv
-FROM python:3.12-slim
+FROM ghcr.io/astral-sh/uv:0.13.9 AS uv
+FROM python:3.15-slim
 
 RUN mkdir -p /data /app \
     && chown 101:101 /data
