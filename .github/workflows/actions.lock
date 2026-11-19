@@ -13,7 +13,7 @@ workflows:
         - 'actions/checkout@v4.4.0'
         - 'actions/configure-pages@v6.0.0'
         - 'actions/deploy-pages@v5.0.1'
-        - 'actions/download-artifact@v4.3.0'
+        - 'actions/download-artifact@v8.0.2'
         - 'actions/jekyll-build-pages@v1.0.13'
         - 'actions/upload-pages-artifact@v5.0.0'
         - 'azure/setup-helm@v5.1.0'
@@ -55,9 +55,9 @@ dependencies:
         commit: 'sha1-368f82528645a54fb793d4d04e342629a3f51346'
         owner_id: 44036562
         repo_id: 438112499
-    'actions/download-artifact@v4.3.0':
-        ref: 'v4.3.0'
-        commit: 'sha1-d3f86a106a0bac45b974a628896c90dbdf5c8093'
+    'actions/download-artifact@v8.0.2':
+        ref: 'v8.0.2'
+        commit: 'sha1-9000827ccba6bdab643e8b6fd33ac0654aef8333'
         owner_id: 44036562
         repo_id: 192626254
     'actions/github-script@v7.1.0':
