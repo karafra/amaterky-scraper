@@ -1,0 +1,58 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "amaterky.name" . }}
+  labels:
+    {{- include "amaterky.labels" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.schedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      template:
+        metadata:
+          labels:
+            {{- include "amaterky.labels" . | nindent 12 }}
+            app.kubernetes.io/component: scraper
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 101
+            runAsGroup: 101
+            fsGroup: 101
+          containers:
+            - name: scraper
+              image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              env:
+                - name: SCRAPE_INTERVAL_SECONDS
+                  value: {{ .Values.scraper.intervalSeconds | quote }}
+                - name: SCRAPE_JITTER_SECONDS
+                  value: {{ .Values.scraper.jitterSeconds | quote }}
+                - name: SCRAPE_USER_AGENT
+                  value: {{ .Values.scraper.userAgent | quote }}
+                - name: SCRAPE_429_RETRIES
+                  value: {{ .Values.scraper.retries429 | quote }}
+                - name: SCRAPE_RETRY_FALLBACK_SECONDS
+                  value: {{ .Values.scraper.retryFallbackSeconds | quote }}
+                {{- if .Values.scraper.otlpEndpoint }}
+                - name: OTEL_EXPORTER_OTLP_ENDPOINT
+                  value: {{ .Values.scraper.otlpEndpoint | quote }}
+                {{- end }}
+                {{- if .Values.scraper.profilePath }}
+                - name: PROFILE_PATH
+                  value: {{ .Values.scraper.profilePath | quote }}
+                {{- end }}
+              volumeMounts:
+                - name: data
+                  mountPath: /data
+              resources:
+                {{- toYaml .Values.jobResources | nindent 16 }}
+          volumes:
+            - name: data
+              persistentVolumeClaim:
+                claimName: {{ include "amaterky.name" . }}-data

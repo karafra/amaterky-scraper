@@ -1,0 +1,36 @@
+image:
+  repository: amaterky-scraper
+  # Empty means use the chart's appVersion.
+  tag: ""
+  pullPolicy: IfNotPresent
+
+nginx:
+  image: nginxinc/nginx-unprivileged:stable-alpine
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+
+service:
+  type: ClusterIP
+  port: 80
+
+schedule: "0 * * * *"
+
+storage:
+  size: 1Gi
+  # Must support ReadWriteMany. Leave empty to use the cluster default.
+  storageClassName: ""
+
+resources: {}
+jobResources: {}
+
+scraper:
+  intervalSeconds: 5
+  jitterSeconds: 2
+  userAgent: "amaterky-scraper/0.1"
+  retries429: 3
+  retryFallbackSeconds: 60
+  # Optional OTLP/HTTP collector URL, for example http://otel-collector:4318.
+  otlpEndpoint: ""
+  # Optional cProfile output path on the shared volume.
+  profilePath: ""

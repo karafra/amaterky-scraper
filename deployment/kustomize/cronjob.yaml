@@ -1,0 +1,46 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: amaterky-scraper
+spec:
+  schedule: "0 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      template:
+        metadata:
+          labels:
+            app: amaterky-scraper
+            component: scraper
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 101
+            runAsGroup: 101
+            fsGroup: 101
+          containers:
+            - name: scraper
+              image: amaterky-scraper:1.0.0
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: SCRAPE_INTERVAL_SECONDS
+                  value: "5"
+                - name: SCRAPE_JITTER_SECONDS
+                  value: "2"
+                - name: SCRAPE_USER_AGENT
+                  value: "amaterky-scraper/0.1"
+                - name: SCRAPE_429_RETRIES
+                  value: "3"
+                - name: SCRAPE_RETRY_FALLBACK_SECONDS
+                  value: "60"
+              volumeMounts:
+                - name: data
+                  mountPath: /data
+          volumes:
+            - name: data
+              persistentVolumeClaim:
+                claimName: amaterky-scraper-data

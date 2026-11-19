@@ -1,0 +1,66 @@
+name: Publish Helm repository
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: Published release tag
+        required: true
+        type: string
+
+jobs:
+  pages:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4.4.0
+        with:
+          fetch-depth: 0
+      - uses: azure/setup-helm@v4.3.1
+        with:
+          version: v3.17.3
+      - uses: actions/configure-pages@v5.0.0
+        id: configure
+      - uses: actions/download-artifact@v4.3.0
+        with:
+          name: helm-chart
+          path: chart
+      - name: Update Helm repository
+        env:
+          TAG: ${{ inputs.tag }}
+          PAGES_URL: ${{ steps.configure.outputs.base_url }}
+        # language=bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          pages="$RUNNER_TEMP/helm-pages"
+          remote_branches=$(git ls-remote --heads origin)
+          if printf '%s\n' "$remote_branches" | cut -f2 | grep -Fx "refs/heads/gh-pages" >/dev/null; then
+            git fetch origin refs/heads/gh-pages:refs/remotes/origin/gh-pages
+            git worktree add -b publish-gh-pages "$pages" origin/gh-pages
+          else
+            git worktree add --detach "$pages" "$GITHUB_SHA"
+            git -C "$pages" switch --orphan publish-gh-pages
+          fi
+          cp chart/*.tgz "$pages/"
+          helm repo index "$pages" --url "$PAGES_URL"
+          touch "$pages/.nojekyll"
+          git -C "$pages" add .
+          if ! git -C "$pages" diff --cached --quiet; then
+            git -C "$pages" commit -m "Publish Helm chart $TAG"
+          fi
+          git -C "$pages" push origin HEAD:refs/heads/gh-pages
+          echo "PAGES_PATH=$pages" >> "$GITHUB_ENV"
+      - uses: actions/upload-pages-artifact@v3.0.1
+        with:
+          path: ${{ env.PAGES_PATH }}
+      - name: Deploy Helm repository
+        id: deploy
+        uses: actions/deploy-pages@v4.0.5

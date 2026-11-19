@@ -1,0 +1,146 @@
+name: Publish release
+
+on:
+  workflow_call:
+    outputs:
+      tag:
+        description: Published release tag
+        value: ${{ jobs.publish.outputs.tag }}
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      attestations: write
+      id-token: write
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.release.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4.4.0
+        with:
+          fetch-depth: 0
+      - uses: azure/setup-helm@v4.3.1
+        with:
+          version: v3.17.3
+      - name: Determine release version
+        id: version
+        uses: actions/github-script@v7.1.0
+        with:
+          script: |
+            if (process.env.GITHUB_REF_TYPE !== 'branch') {
+              throw new Error('Run this workflow on main or a release branch');
+            }
+            const branch = process.env.GITHUB_REF_NAME;
+            const branchMatch = /^release\/(0|[1-9]\d*)\.(0|[1-9]\d*)\.x$/.exec(branch);
+            if (branch !== 'main' && !branchMatch) {
+              throw new Error('Select main or a release/<major>.<minor>.x branch');
+            }
+            const { stdout } = await exec.getExecOutput('git', ['tag', '--list'], { silent: true });
+            const versions = stdout.split(/\r?\n/).flatMap(tag => {
+              const match = /^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.exec(tag);
+              return match ? [match.slice(1).map(BigInt)] : [];
+            });
+            const compare = (a, b) => {
+              for (let i = 0; i < 3; i++) {
+                if (a[i] !== b[i]) return a[i] > b[i] ? -1 : 1;
+              }
+              return 0;
+            };
+            versions.sort(compare);
+            let version;
+            if (branch === 'main') {
+              version = versions.length ? [versions[0][0], versions[0][1] + 1n, 0n] : [0n, 1n, 0n];
+            } else {
+              const major = BigInt(branchMatch[1]);
+              const minor = BigInt(branchMatch[2]);
+              const latest = versions.find(v => v[0] === major && v[1] === minor);
+              if (!latest) throw new Error('No version tags found for the release branch');
+              version = [major, minor, latest[2] + 1n];
+            }
+            core.setOutput('version', version.join('.'));
+      - name: Check release and select image
+        id: release
+        shell: bash
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          release_branch="release/${VERSION%.*}.x"
+          tag="v$VERSION"
+          if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+            echo "Tag $tag already exists" >&2
+            exit 1
+          fi
+          remote_branches=$(git ls-remote --heads origin)
+          if [[ "$GITHUB_REF_NAME" == main ]] && printf '%s\n' "$remote_branches" | cut -f2 | grep -Fx "refs/heads/$release_branch" >/dev/null; then
+            echo "Release branch $release_branch already exists" >&2
+            exit 1
+          fi
+          image="ghcr.io/${GITHUB_REPOSITORY,,}"
+          {
+            echo "tag=$tag"
+            echo "branch=$release_branch"
+            echo "image=$image"
+          } >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@v3.12.0
+      - uses: docker/login-action@v3.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push scraper image
+        id: image
+        uses: docker/build-push-action@v6.19.2
+        with:
+          context: .
+          file: build/docker/Dockerfile
+          push: true
+          tags: ${{ steps.release.outputs.image }}:${{ steps.release.outputs.tag }}
+      - name: Attest image provenance
+        uses: actions/attest-build-provenance@v2.4.0
+        with:
+          subject-name: ${{ steps.release.outputs.image }}
+          subject-digest: ${{ steps.image.outputs.digest }}
+          push-to-registry: true
+      - name: Package Helm chart
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          TAG: ${{ steps.release.outputs.tag }}
+          IMAGE: ${{ steps.release.outputs.image }}
+        run: |
+          set -euo pipefail
+          cp -R deployment/helm/amaterky-scraper "$RUNNER_TEMP/chart"
+          awk -v image="$IMAGE" '
+            $0 == "  repository: amaterky-scraper" { $0 = "  repository: " image; count++ }
+            { print }
+            END { if (count != 1) { print "Unable to set image repository in chart values" > "/dev/stderr"; exit 1 } }
+          ' "$RUNNER_TEMP/chart/values.yaml" > "$RUNNER_TEMP/values.yaml"
+          mv "$RUNNER_TEMP/values.yaml" "$RUNNER_TEMP/chart/values.yaml"
+          mkdir -p dist
+          helm lint "$RUNNER_TEMP/chart"
+          helm package "$RUNNER_TEMP/chart" --version "$VERSION" --app-version "$TAG" --destination dist
+      - name: Attest Helm chart provenance
+        uses: actions/attest-build-provenance@v2.4.0
+        with:
+          subject-path: dist/*.tgz
+      - name: Create release branch
+        if: github.ref_name == 'main'
+        env:
+          BRANCH: ${{ steps.release.outputs.branch }}
+        run: git push origin "$GITHUB_SHA:refs/heads/$BRANCH"
+      - name: Create tag and GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.release.outputs.tag }}
+        run: gh release create "$TAG" dist/*.tgz --target "$GITHUB_SHA" --generate-notes
+      - uses: actions/upload-artifact@v4.6.2
+        with:
+          name: helm-chart
+          path: dist/*.tgz
+          if-no-files-found: error

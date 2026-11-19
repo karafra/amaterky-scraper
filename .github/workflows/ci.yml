@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, "release/**" ]
+  pull_request:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4.4.0
+      - uses: astral-sh/setup-uv@v6.8.0
+        with:
+          version: "0.13.7"
+      - uses: azure/setup-helm@v4.3.1
+        with:
+          version: v3.17.3
+      - name: Install dependencies
+        run: uv sync --frozen
+      - name: Test
+        run: uv run --frozen python -m unittest discover -s tests -v
+      - name: Test release version calculation
+        uses: actions/github-script@v7.1.0
+        with:
+          # language=javascript
+          script: |
+            const assert = require('node:assert/strict');
+            const fs = require('node:fs');
+            const workflow = fs.readFileSync('.github/workflows/publish-release.yml', 'utf8');
+            const match = workflow.match(/      - name: Determine release version\n[\s\S]*?          script: \|\n([\s\S]*?)(?=      - name: Check release and select image\n)/);
+            if (!match) {
+                throw new Error('Could not find release version script');
+            }
+            const script = match[1].split('\n').map(line => line.replace(/^            /, '')).join('\n');
+            const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+            const calculate = new AsyncFunction('core', 'exec', 'process', script);
+            async function version(branch, tags, refType = 'branch') {
+              const outputs = {};
+              const mockCore = { setOutput: (name, value) => { outputs[name] = value; } };
+              const mockExec = { getExecOutput: async () => ({ stdout: tags.join('\n') }) };
+              await calculate(mockCore, mockExec, { env: { GITHUB_REF_TYPE: refType, GITHUB_REF_NAME: branch } });
+              return outputs.version;
+            }
+            assert.equal(await version('main', []), '0.1.0');
+            assert.equal(await version('main', ['v1.9.4', 'v2.0.1', 'v3.0.0-rc.1']), '2.1.0');
+            assert.equal(await version('main', ['v1.9.0', 'v1.10.0', 'v01.99.0']), '1.11.0');
+            assert.equal(await version('main', ['1.0.0', 'v1.0.0+build']), '0.1.0');
+            assert.equal(await version('main', ['v1.9007199254740993.0']), '1.9007199254740994.0');
+            assert.equal(await version('release/1.2.x', ['v1.2.9', 'v1.2.10', 'v2.0.0']), '1.2.11');
+            for (const branch of ['feature/test', 'release/01.2.x', 'release/1.2.x', 'release/1.2.x/extra']) {
+              await assert.rejects(version(branch, []));
+            }
+            await assert.rejects(version('main', [], 'tag'));
+            core.info('Release version tests passed');
+      - name: Validate deployment manifests
+        run: |
+          helm lint deployment/helm/amaterky-scraper
+          helm template test deployment/helm/amaterky-scraper > /dev/null
+          kubectl kustomize deployment/kustomize > /dev/null
