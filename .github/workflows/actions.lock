@@ -7,7 +7,7 @@ workflows:
         - 'actions/checkout@v4.4.0'
         - 'actions/github-script@v7.1.0'
         - 'astral-sh/setup-uv@v6.8.0'
-        - 'azure/setup-helm@v4.3.1'
+        - 'azure/setup-helm@v5.1.0'
     '.github/workflows/dependabot-automerge.yml': []
     '.github/workflows/publish-pages.yml':
         - 'actions/checkout@v4.4.0'
@@ -16,13 +16,13 @@ workflows:
         - 'actions/download-artifact@v4.3.0'
         - 'actions/jekyll-build-pages@v1.0.13'
         - 'actions/upload-pages-artifact@v3.0.1'
-        - 'azure/setup-helm@v4.3.1'
+        - 'azure/setup-helm@v5.1.0'
     '.github/workflows/publish-release.yml':
         - 'actions/attest-build-provenance@v2.4.0'
         - 'actions/checkout@v4.4.0'
         - 'actions/github-script@v7.1.0'
         - 'actions/upload-artifact@v4.6.2'
-        - 'azure/setup-helm@v4.3.1'
+        - 'azure/setup-helm@v5.1.0'
         - 'docker/build-push-action@v6.19.2'
         - 'docker/login-action@v3.7.0'
         - 'docker/setup-buildx-action@v3.12.0'
@@ -98,9 +98,9 @@ dependencies:
         commit: 'sha1-d0cc045d04ccac9d8b7881df0226f9e82c39688e'
         owner_id: 115962839
         repo_id: 846733598
-    'azure/setup-helm@v4.3.1':
-        ref: 'v4.3.1'
-        commit: 'sha1-1a275c3b69536ee54be43f2070a358922e12c8d4'
+    'azure/setup-helm@v5.1.0':
+        ref: 'v5.1.0'
+        commit: 'sha1-2f5e7bc67f1f9972ab16657bb795f36d8f04de0e'
         owner_id: 6844498
         repo_id: 210310251
     'docker/build-push-action@v6.19.2':
