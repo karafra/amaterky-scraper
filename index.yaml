@@ -1,0 +1,14 @@
+apiVersion: v1
+entries:
+  amaterky-scraper:
+  - apiVersion: v2
+    appVersion: v0.1.0
+    created: "2026-11-19T00:16:17.492886917Z"
+    description: Periodically scrape listings and serve the latest JSON with Nginx
+    digest: 26ee86c68aa2fe111ba436665be573b4efed0aee005102055d008848f48144cd
+    name: amaterky-scraper
+    type: application
+    urls:
+    - https://karafra.github.io/amaterky-scraper/amaterky-scraper-0.1.0.tgz
+    version: 0.1.0
+generated: "2026-11-19T00:16:17.492500402Z"
