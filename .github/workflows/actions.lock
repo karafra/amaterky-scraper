@@ -25,7 +25,7 @@ workflows:
         - 'azure/setup-helm@v5.1.0'
         - 'docker/build-push-action@v6.19.2'
         - 'docker/login-action@v3.7.0'
-        - 'docker/setup-buildx-action@v3.12.0'
+        - 'docker/setup-buildx-action@v4.4.1'
     '.github/workflows/release.yml': []
 dependencies:
     'actions/attest-build-provenance@1176ef556905f349f669722abf30bce1a6e16e01':
@@ -113,8 +113,8 @@ dependencies:
         commit: 'sha1-c94ce9fb468520275223c153574b00df6fe4bcc9'
         owner_id: 5429470
         repo_id: 287743349
-    'docker/setup-buildx-action@v3.12.0':
-        ref: 'v3.12.0'
-        commit: 'sha1-8d2750c68a42422c14e847fe6c8ac0403b4cbd6f'
+    'docker/setup-buildx-action@v4.4.1':
+        ref: 'v4.4.1'
+        commit: 'sha1-f87e5991a6d7451dcb8d9637bfbc97413f497069'
         owner_id: 5429470
         repo_id: 288485773
