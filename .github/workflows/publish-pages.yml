@@ -51,16 +51,22 @@ jobs:
           fi
           cp chart/*.tgz "$pages/"
           helm repo index "$pages" --url "$PAGES_URL"
-          touch "$pages/.nojekyll"
           git -C "$pages" add .
           if ! git -C "$pages" diff --cached --quiet; then
             git -C "$pages" commit -m "Publish Helm chart $TAG"
           fi
           git -C "$pages" push origin HEAD:refs/heads/gh-pages
-          echo "PAGES_PATH=$pages" >> "$GITHUB_ENV"
+          mkdir -p "$GITHUB_WORKSPACE/pages-site"
+          cp -a "$pages/." "$GITHUB_WORKSPACE/pages-site/"
+          rm "$GITHUB_WORKSPACE/pages-site/.git"
+      - name: Build Pages with Jekyll
+        uses: actions/jekyll-build-pages@v1.0.13
+        with:
+          source: ./pages-site
+          destination: ./_site
       - uses: actions/upload-pages-artifact@v3.0.1
         with:
-          path: ${{ env.PAGES_PATH }}
+          path: ./_site
       - name: Deploy Helm repository
         id: deploy
         uses: actions/deploy-pages@v4.0.5

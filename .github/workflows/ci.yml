@@ -62,3 +62,5 @@ jobs:
           helm lint deployment/helm/amaterky-scraper
           helm template test deployment/helm/amaterky-scraper > /dev/null
           kubectl kustomize deployment/kustomize > /dev/null
+      - name: Build scraper image
+        run: docker build --file build/docker/Dockerfile --tag amaterky-scraper:ci .
