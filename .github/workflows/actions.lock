@@ -4,13 +4,13 @@
 version: 'v0.0.3'
 workflows:
     '.github/workflows/ci.yml':
-        - 'actions/checkout@v4.4.0'
+        - 'actions/checkout@v7.0.1'
         - 'actions/github-script@v9.0.0'
         - 'astral-sh/setup-uv@v10.4.0'
         - 'azure/setup-helm@v5.1.0'
     '.github/workflows/dependabot-automerge.yml': []
     '.github/workflows/publish-pages.yml':
-        - 'actions/checkout@v4.4.0'
+        - 'actions/checkout@v7.0.1'
         - 'actions/configure-pages@v6.0.0'
         - 'actions/deploy-pages@v5.0.1'
         - 'actions/download-artifact@v4.3.0'
@@ -19,7 +19,7 @@ workflows:
         - 'azure/setup-helm@v5.1.0'
     '.github/workflows/publish-release.yml':
         - 'actions/attest-build-provenance@v4.2.2'
-        - 'actions/checkout@v4.4.0'
+        - 'actions/checkout@v7.0.1'
         - 'actions/github-script@v9.0.0'
         - 'actions/upload-artifact@v7.0.2'
         - 'azure/setup-helm@v5.1.0'
@@ -40,9 +40,9 @@ dependencies:
         commit: 'sha1-508db95dd578ae2727ebd6217d5ba78e4fbda05d'
         owner_id: 44036562
         repo_id: 760701061
-    'actions/checkout@v4.4.0':
-        ref: 'v4.4.0'
-        commit: 'sha1-11d5960a326750d5838078e36cf38b85af677262'
+    'actions/checkout@v7.0.1':
+        ref: 'v7.0.1'
+        commit: 'sha1-3d3c42e5aac5ba805825da76410c181273ba90b1'
         owner_id: 44036562
         repo_id: 197814629
     'actions/configure-pages@v6.0.0':
