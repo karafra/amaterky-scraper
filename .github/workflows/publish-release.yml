@@ -30,7 +30,7 @@ jobs:
           version: v3.17.3
       - name: Determine release version
         id: version
-        uses: actions/github-script@v7.1.0
+        uses: actions/github-script@v9.0.0
         with:
           script: |
             if (process.env.GITHUB_REF_TYPE !== 'branch') {
